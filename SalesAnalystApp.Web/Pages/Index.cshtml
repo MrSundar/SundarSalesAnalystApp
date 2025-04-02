@@ -1,0 +1,120 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Sales Records";
+    Layout = "_Layout";
+}
+
+<h2>Sales Records</h2>
+
+<form method="get" class="form-inline mb-3">
+    <input type="text" name="country" value="@Model.Country" placeholder="Country" class="form-control me-2" />
+    <input type="text" name="segment" value="@Model.Segment" placeholder="Segment" class="form-control me-2" />
+    <select name="sortBy" class="form-control me-2">
+        <option value="">--Sort By--</option>
+        <option value="Country" selected="@(Model.SortBy == "Country")">Country</option>
+        <option value="Segment" selected="@(Model.SortBy == "Segment")">Segment</option>
+        <option value="UnitsSold" selected="@(Model.SortBy == "UnitsSold")">Units Sold</option>
+        <option value="SalePrice" selected="@(Model.SortBy == "SalePrice")">Sale Price</option>
+    </select>
+    <label><input type="checkbox" name="descending" value="true" @(Model.Descending ? "checked" : "") /> Descending</label>
+    <button type="submit" class="btn btn-primary ms-2">Apply</button>
+</form>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Segment</th>
+            <th>Country</th>
+            <th>Product</th>
+            <th>Discount Band</th>
+            <th>Units Sold</th>
+            <th>Manufacturing Price</th>
+            <th>Sale Price</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model.Sales)
+    {
+        <tr>
+            <td>@item.Segment</td>
+            <td>@item.Country</td>
+            <td>@item.Product</td>
+            <td>@item.DiscountBand</td>
+            <td>@item.UnitsSold</td>
+            <td>@item.ManufacturingPrice</td>
+            <td>@item.SalePrice</td>
+            <td>@item.Date.ToShortDateString()</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@{
+    int totalPages = (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize);
+    int windowSize = 5;
+    int startPage = Math.Max(1, Model.Page - windowSize / 2);
+    int endPage = Math.Min(totalPages, startPage + windowSize - 1);
+
+    if (endPage - startPage < windowSize - 1)
+    {
+        startPage = Math.Max(1, endPage - windowSize + 1);
+    }
+
+    string BuildQuery(int page)
+    {
+        var query = $"?page={page}";
+        if (!string.IsNullOrWhiteSpace(Model.Country)) query += $"&country={Model.Country}";
+        if (!string.IsNullOrWhiteSpace(Model.Segment)) query += $"&segment={Model.Segment}";
+        if (!string.IsNullOrWhiteSpace(Model.SortBy)) query += $"&sortBy={Model.SortBy}&descending={Model.Descending.ToString().ToLower()}";
+        return query;
+    }
+}
+
+<nav class="mt-3">
+    <ul class="pagination justify-content-center">
+        @if (Model.Page > 1)
+        {
+            <li class="page-item">
+                <a class="page-link" href="@BuildQuery(Model.Page - 1)" aria-label="Previous">&laquo;</a>
+            </li>
+        }
+
+        @if (startPage > 2)
+        {
+            <li class="page-item"><a class="page-link" href="@BuildQuery(1)">1</a></li>
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+        }
+        else if (startPage == 2)
+        {
+            <li class="page-item"><a class="page-link" href="@BuildQuery(1)">1</a></li>
+        }
+
+        @for (int i = startPage; i <= endPage; i++)
+        {
+            <li class="page-item @(i == Model.Page ? "active" : "")">
+                <a class="page-link" href="@BuildQuery(i)">@i</a>
+            </li>
+        }
+
+        @if (endPage < totalPages - 1)
+        {
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            <li class="page-item"><a class="page-link" href="@BuildQuery(totalPages)">@totalPages</a></li>
+        }
+        else if (endPage == totalPages - 1)
+        {
+            <li class="page-item"><a class="page-link" href="@BuildQuery(totalPages)">@totalPages</a></li>
+        }
+
+        @if (Model.Page < totalPages)
+        {
+            <li class="page-item">
+                <a class="page-link" href="@BuildQuery(Model.Page + 1)" aria-label="Next">&raquo;</a>
+            </li>
+        }
+    </ul>
+</nav>
+
+
